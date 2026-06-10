@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { useSession } from '../hooks/useSession';
 import Posts from '../components/Posts';
