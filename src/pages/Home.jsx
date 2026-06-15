@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { useSession } from '../hooks/useSession';
 import Posts from '../components/Posts';
@@ -29,11 +28,11 @@ function Home() {
     let imageUrl = null;
 
     if (image) {
-      const fileName = `${session.sub}-${Date.now()}`;
+      const fileName = `${session.user.id}-${Date.now()}`;
 
       const { error: uploadError } = await supabase.storage
-      . from("posts")
-      . upload(fileName, image);
+        .from("posts")
+        .upload(fileName, image);
 
       if (uploadError) {
         console.log(uploadError);
@@ -48,7 +47,7 @@ function Home() {
     }
 
     const { error } = await supabase.from("posts").insert({
-      user_id: session.sub,
+      user_id: session.user.id,
       content: content,
       image_url: imageUrl,
     });
@@ -68,7 +67,7 @@ function Home() {
 
   return (
     <>
-    <button onClick={()=> supabase.auth.signOut()}>logout</button>
+      <button onClick={() => supabase.auth.signOut()}>logout</button>
       <form onSubmit={handleSubmit}>
         <textarea
           rows="4"
@@ -90,7 +89,7 @@ function Home() {
           date={post.created_at}
           image={post.image_url}
           onDelete={
-            post.user_id === session?.sub
+            post.user_id === session?.user.id
             ? () => handleDelete(post.id)
             : undefined
           }
@@ -99,7 +98,5 @@ function Home() {
     </>
   );
 }
-
-
 
 export default Home;

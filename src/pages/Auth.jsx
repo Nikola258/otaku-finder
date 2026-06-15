@@ -17,10 +17,10 @@ export default function Auth({ mode = 'login' }) {
   const [message, setMessage] = useState(null);
   const navigate = useNavigate();
 
-  // Als de gebruiker al is ingelogd, stuur hem door naar de homepage
+  // Als de gebruiker al is ingelogd, stuur hem door naar de profilepage
   const { session, loading: sessionLoading } = useSession();
   if (sessionLoading) return null;
-  if (session) return <Navigate to="/" />;
+  if (session) return <Navigate to="/profile" />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +32,7 @@ export default function Auth({ mode = 'login' }) {
       // Inloggen met e-mail en wachtwoord
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
-      else navigate('/');
+      else navigate('/profile');
     }
 
     // if (mode === 'register') {
@@ -63,12 +63,6 @@ export default function Auth({ mode = 'login' }) {
         navigate("/profile");
       }
     }
-
-    // was:
-    if (session) return <Navigate to="/" />;
-
-    // wordt:
-    if (session && !loading) return <Navigate to="/" />;
 
     setLoading(false);
   };

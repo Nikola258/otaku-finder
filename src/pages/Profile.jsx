@@ -14,7 +14,7 @@ export function Profile() {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', session.sub)
+      .eq('user_id', session.user.id)
       .single();
 
     if (data) {
@@ -29,13 +29,13 @@ export function Profile() {
     const { error } = await supabase
       .from('profiles')
       .update({ username, bio, is_private: isPrivate })
-      .eq('user_id', session.sub);
+      .eq('user_id', session.user.id);
 
     if (!error) fetchProfile();
   }
 
   async function uploadAvatar(image) {
-    const fileName = `${session.sub}-${Date.now()}`;
+    const fileName = `${session.user.id}-${Date.now()}`;
 
     const { error } = await supabase.storage
       .from('avatars')
@@ -50,7 +50,7 @@ export function Profile() {
     await supabase
       .from('profiles')
       .update({ avatar_url: data.publicUrl })
-      .eq('user_id', session.sub);
+      .eq('user_id', session.user.id);
   }
 
   useEffect(() => {
