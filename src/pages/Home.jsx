@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useSession } from '../hooks/useSession';
-import Posts from '../components/Posts';
+import PostCard from '../components/PostCard';
 
 function Home() {
   const [content, setContent] = useState("");
@@ -81,17 +81,11 @@ function Home() {
       </form>
 
       {posts.map((post) => (
-        <Posts
+        <PostCard
           key={post.id}
-          user={post.user_id}
           content={post.content}
           date={post.created_at}
           image={post.image_url}
-          onDelete={
-            post.user_id === session?.user.id
-            ? () => handleDelete(post.id)
-            : undefined
-          }
         />
       ))}
     </>

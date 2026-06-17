@@ -78,6 +78,11 @@ export function Profile() {
     if (data) setPosts(data);
   }
 
+  async function handleDelete(id) {
+    const { error } = await supabase.from('posts').delete().eq('id', id);
+    if (!error) fetchPosts();
+  }
+
   if (sessionLoading) return <p>Laden...</p>;
   if (!session) return <p>Niet ingelogd.</p>;
   if (!profile) return <p>Profiel laden...</p>;
@@ -136,7 +141,7 @@ export function Profile() {
             {/* Posts van deze gebruiker */}
             <h3>User's Posts</h3>
             {posts.map((post) => (
-              <PostCard key={post.id} content={post.content} image={post.image_url} date={post.created_at} />
+              <PostCard key={post.id} content={post.content} image={post.image_url} date={post.created_at} onDelete={() => handleDelete(post.id)} />
             ))}
         </div>
     );
