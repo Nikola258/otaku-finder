@@ -115,12 +115,15 @@ export function Profile() {
             <button onClick={updateProfile}>
                 Opslaan
             </button>
+            <div>
+                <button onClick={() => supabase.auth.signOut()}>logout</button>
+            </div>
         </div>
     );
 }
 
 export function PublicProfile() {
-  const { id } = useParams();
+    const {id} = useParams();
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {

@@ -67,7 +67,6 @@ function Home() {
 
   return (
     <>
-      <button onClick={() => supabase.auth.signOut()}>logout</button>
       <form onSubmit={handleSubmit}>
         <textarea
           rows="4"
