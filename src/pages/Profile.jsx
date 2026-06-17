@@ -2,10 +2,12 @@ import { useSession } from '../hooks/useSession';
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useParams } from 'react-router-dom';
+import PostCard from '../components/PostCard';
 
 export function Profile() {
   const { session, loading: sessionLoading } = useSession();
   const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
 
   const MAX_NAME = 20;
   const MAX_BIO = 150;
@@ -62,7 +64,19 @@ export function Profile() {
   useEffect(() => {
     if (!session) return;
     fetchProfile();
+    fetchPosts();
   }, [session]);
+
+  // Haal de posts op van deze gebruiker, nieuwste eerst
+  async function fetchPosts() {
+    const { data } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (data) setPosts(data);
+  }
 
   if (sessionLoading) return <p>Laden...</p>;
   if (!session) return <p>Niet ingelogd.</p>;
@@ -118,6 +132,12 @@ export function Profile() {
             <div>
                 <button onClick={() => supabase.auth.signOut()}>logout</button>
             </div>
+
+            {/* Posts van deze gebruiker */}
+            <h3>User's Posts</h3>
+            {posts.map((post) => (
+              <PostCard key={post.id} content={post.content} image={post.image_url} date={post.created_at} />
+            ))}
         </div>
     );
 }

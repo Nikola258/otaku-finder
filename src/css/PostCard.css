@@ -1,0 +1,40 @@
+.post-card {
+  background: #211E1E;
+  border: 1px solid #FF5E00;
+  border-radius: 12px;
+  padding: 16px 24px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.post-card-content {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.post-card-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.post-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post-card-icons {
+  display: flex;
+  gap: 16px;
+}
+
+.post-card-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
