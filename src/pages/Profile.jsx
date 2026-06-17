@@ -6,6 +6,9 @@ import { useParams } from 'react-router-dom';
 export function Profile() {
   const { session, loading: sessionLoading } = useSession();
   const [profile, setProfile] = useState(null);
+
+  const MAX_NAME = 20;
+  const MAX_BIO = 150;
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -41,7 +44,10 @@ export function Profile() {
       .from('avatars')
       .upload(fileName, image);
 
-    if (error) return;
+      if (error) {
+          alert(error.message);
+          return;
+      }
 
     const { data } = supabase.storage
       .from('avatars')
@@ -62,21 +68,55 @@ export function Profile() {
   if (!session) return <p>Niet ingelogd.</p>;
   if (!profile) return <p>Profiel laden...</p>;
 
-  return (
-    <div>
-      <h2>{username}</h2>
-      <p>{bio}</p>
-      <label>
-        <input
-          type="checkbox"
-          checked={isPrivate}
-          onChange={(e) => setIsPrivate(e.target.checked)}
-        />
-        Profiel privé maken
-      </label>
-      <button onClick={updateProfile}>Opslaan</button>
-    </div>
-  );
+    return (
+        <div>
+            <h2>Edit Profile</h2>
+
+            {profile.avatar_url && (
+                <img
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    width={100}
+                />
+            )}
+
+            <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => uploadAvatar(e.target.files[0])}
+            />
+
+            <input
+                type="text"
+                value={username}
+                maxLength={MAX_NAME}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+            />
+            <p>{username.length}/{MAX_NAME}</p>
+
+            <textarea
+                value={bio}
+                maxLength={MAX_BIO}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Bio"
+            />
+            <p>{bio.length}/{MAX_BIO}</p>
+
+            <label>
+                <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                />
+                Profiel privé maken
+            </label>
+
+            <button onClick={updateProfile}>
+                Opslaan
+            </button>
+        </div>
+    );
 }
 
 export function PublicProfile() {
