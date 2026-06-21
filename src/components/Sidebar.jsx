@@ -8,6 +8,7 @@ function Sidebar() {
 
   const links = [
     { label: 'Home', to: '/' },
+    { label: 'Search', to: '/search' },
     { label: 'Favorites', to: '/favorites' },
     { label: 'Friends', to: '/friends' },
   ];

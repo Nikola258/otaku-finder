@@ -3,6 +3,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AppLayout from './components/AppLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import Search from './pages/Search';
 import { Profile, PublicProfile } from './pages/Profile';
 
 export default function App() {
@@ -26,6 +27,12 @@ export default function App() {
       <Route path="/profile/:id" element={
         <PrivateRoute>
           <AppLayout><PublicProfile /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/search" element={
+        <PrivateRoute>
+          <AppLayout><Search /></AppLayout>
         </PrivateRoute>
       } />
     </Routes>
