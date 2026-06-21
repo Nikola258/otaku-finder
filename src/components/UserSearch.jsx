@@ -1,0 +1,235 @@
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabase';
+import ProfileField from './ProfileField';
+import PostCard from './PostCard';
+import '../css/UserSearch.css';
+import '../css/Profile.css';
+
+const GENRES = ['Horror', 'Comedy', 'Action', 'Romance', 'Sci-Fi', 'Fantasy', 'Mystery', 'Thriller', 'Slice of Life', 'Sports'];
+const MEDIA = ['Anime', 'Manga', 'Light Novel', 'Visual Novel', 'Game'];
+const LANGUAGES = ['Japanese', 'English', 'Korean', 'Chinese', 'French', 'Spanish'];
+const TIMEZONES = ['UTC -12','UTC -11','UTC -10','UTC -9','UTC -8','UTC -7','UTC -6','UTC -5','UTC -4','UTC -3','UTC -2','UTC -1','UTC 0','UTC +1','UTC +2','UTC +3','UTC +4','UTC +5','UTC +6','UTC +7','UTC +8','UTC +9','UTC +10','UTC +11','UTC +12'];
+const AGES = Array.from({ length: 83 }, (_, i) => i + 13);
+
+function UserSearch() {
+  const navigate = useNavigate();
+
+  const [username, setUsername] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [genres, setGenres] = useState(['', '', '', '']);
+  const [mediaType, setMedia] = useState('');
+  const [language, setLanguage] = useState('');
+  const [timezone, setTimezone] = useState('');
+
+  const [users, setUsers] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [searched, setSearched] = useState(false);
+
+  const handleGenreChange = (index, value) => {
+    const updated = [...genres];
+    updated[index] = value;
+    setGenres(updated);
+  };
+
+  const goToProfile = (id) => navigate(`/profile/${id}`);
+
+  const handleSearch = async () => {
+    const pickedGenres = genres.filter(Boolean);
+
+    let userQuery = supabase
+      .from('profiles')
+      .select('*')
+      .neq('is_private', true);
+
+    if (username) userQuery = userQuery.ilike('username', `%${username}%`);
+    if (age) userQuery = userQuery.eq('age', age);
+    if (gender) userQuery = userQuery.eq('gender', gender);
+    if (mediaType) userQuery = userQuery.eq('media_type', mediaType);
+    if (language) userQuery = userQuery.eq('language', language);
+    if (timezone) userQuery = userQuery.eq('timezone', timezone);
+    if (pickedGenres.length) userQuery = userQuery.contains('genres', pickedGenres);
+
+    const { data: foundUsers = [] } = await userQuery;
+
+    let postQuery = supabase.from('posts').select('*');
+
+    if (mediaType) postQuery = postQuery.eq('media_type', mediaType);
+    if (language) postQuery = postQuery.eq('language', language);
+    if (pickedGenres.length) postQuery = postQuery.in('genre', pickedGenres);
+
+    if (username) {
+      const { data = [] } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .ilike('username', `%${username}%`);
+
+      const ids = data.map(user => user.user_id);
+
+      if (!ids.length) {
+        setUsers(foundUsers);
+        setPosts([]);
+        setSearched(true);
+        return;
+      }
+
+      postQuery = postQuery.in('user_id', ids);
+    }
+
+    const { data: foundPosts = [] } = await postQuery;
+
+    setUsers(foundUsers);
+    setPosts(foundPosts);
+    setSearched(true);
+  };
+
+  const handleReset = () => {
+    setUsername('');
+    setAge('');
+    setGender('');
+    setGenres(['', '', '', '']);
+    setMedia('');
+    setLanguage('');
+    setTimezone('');
+    setUsers([]);
+    setPosts([]);
+    setSearched(false);
+  };
+
+  return (
+    <main className="profile-main">
+      <div className="profile-fields">
+
+        <ProfileField label="Name :">
+          <input
+            type="text"
+            value={username}
+            placeholder="Search by username..."
+            onChange={e => setUsername(e.target.value)}
+          />
+        </ProfileField>
+
+        <ProfileField label="Age :">
+          <select value={age} onChange={e => setAge(e.target.value)}>
+            <option value="">Any</option>
+            {AGES.map(age => (
+              <option key={age} value={age}>{age}</option>
+            ))}
+          </select>
+        </ProfileField>
+
+        <ProfileField label="Gender :">
+          <select value={gender} onChange={e => setGender(e.target.value)}>
+            <option value="">Any</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+            <option>Prefer not to say</option>
+          </select>
+        </ProfileField>
+
+        <ProfileField label="Favourite genres :" fullWidth>
+          {genres.map((genre, index) => (
+            <select
+              key={index}
+              value={genre}
+              onChange={e => handleGenreChange(index, e.target.value)}
+            >
+              <option value="">----------</option>
+              {GENRES.map(item => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+          ))}
+        </ProfileField>
+
+        <ProfileField label="Favourite media :">
+          <select value={mediaType} onChange={e => setMedia(e.target.value)}>
+            <option value="">Any</option>
+            {MEDIA.map(item => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </ProfileField>
+
+        <ProfileField label="Favourite language :">
+          <select value={language} onChange={e => setLanguage(e.target.value)}>
+            <option value="">Any</option>
+            {LANGUAGES.map(item => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </ProfileField>
+
+        <ProfileField label="Time zone :">
+          <select value={timezone} onChange={e => setTimezone(e.target.value)}>
+            <option value="">Any</option>
+            {TIMEZONES.map(item => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </ProfileField>
+
+      </div>
+
+      <div className="user-search__actions">
+        <button className="profile-save" onClick={handleSearch}>Search</button>
+        <button className="user-search__reset" onClick={handleReset}>Reset</button>
+      </div>
+
+      {searched && (
+        <>
+          <section className="profile-posts">
+            <h2 className="profile-posts__title">Users</h2>
+
+            {!users.length && (
+              <p className="profile-posts__empty">No users found.</p>
+            )}
+
+            {users.map(user => (
+              <div
+                key={user.user_id}
+                className="user-search__card"
+                onClick={() => goToProfile(user.user_id)}
+              >
+                <div className="user-search__avatar">
+                  {user.avatar_url
+                    ? <img src={user.avatar_url} alt={user.username} />
+                    : <span>?</span>}
+                </div>
+
+                <div className="user-search__info">
+                  <span className="user-search__name">{user.username}</span>
+                  <span className="user-search__meta">
+                    {user.age} · {user.gender} · {user.media_type} · {user.language}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="profile-posts">
+            <h2 className="profile-posts__title">Posts</h2>
+
+            {!posts.length && (
+              <p className="profile-posts__empty">No posts found.</p>
+            )}
+
+            {posts.map(post => (
+              <PostCard
+                key={post.id}
+                content={post.content}
+                image={post.image_url}
+                date={post.created_at}
+              />
+            ))}
+          </section>
+        </>
+      )}
+    </main>
+  );
+}
+
+export default UserSearch;
