@@ -4,6 +4,7 @@ import AppLayout from './components/AppLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 import Search from './pages/Search';
+import Friends from './pages/Friends';
 import { Profile, PublicProfile } from './pages/Profile';
 
 export default function App() {
@@ -35,6 +36,13 @@ export default function App() {
           <AppLayout><Search /></AppLayout>
         </PrivateRoute>
       } />
+
+      <Route path="/friends" element={
+        <PrivateRoute>
+          <AppLayout><Friends /></AppLayout>
+        </PrivateRoute>
+      } />
     </Routes>
   );
 }
+ 
