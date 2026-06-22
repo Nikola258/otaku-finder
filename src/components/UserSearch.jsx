@@ -8,18 +8,22 @@ import PostCard from './PostCard';
 import '../css/UserSearch.css';
 import '../css/Profile.css';
 
+// Dropdown option lists used throughout the search form
 const GENRES = ['Horror', 'Comedy', 'Action', 'Romance', 'Sci-Fi', 'Fantasy', 'Mystery', 'Thriller', 'Slice of Life', 'Sports'];
 const MEDIA = ['Anime', 'Manga', 'Light Novel', 'Visual Novel', 'Game'];
 const LANGUAGES = ['Japanese', 'English', 'Korean', 'Chinese', 'French', 'Spanish'];
 const TIMEZONES = ['UTC -12','UTC -11','UTC -10','UTC -9','UTC -8','UTC -7','UTC -6','UTC -5','UTC -4','UTC -3','UTC -2','UTC -1','UTC 0','UTC +1','UTC +2','UTC +3','UTC +4','UTC +5','UTC +6','UTC +7','UTC +8','UTC +9','UTC +10','UTC +11','UTC +12'];
 const AGES = Array.from({ length: 83 }, (_, i) => i + 13);
 
+// Initialize navigation and retrieve the current logged-in user's ID
 function UserSearch() {
   const navigate = useNavigate();
   const { session } = useSession();
   const myId = session?.user?.id;
 
+  // Search filter states
   const [username, setUsername] = useState('');
+  const [postKeyword, setPostKeyword] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [genres, setGenres] = useState(['', '', '', '']);
@@ -42,8 +46,19 @@ function UserSearch() {
   const handleSearch = async () => {
     const pickedGenres = genres.filter(Boolean);
 
-    // Show ALL users including private ones
+    // Get blocked user IDs (both directions)
+    const { data: blockData } = await supabase
+      .from('blocks')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`);
+
+    const blockedIds = (blockData ?? []).map(b => b.blocker_id === myId ? b.blocked_id : b.blocker_id);
+
+    // Build and execute a profile search query by excluding blocked users
+    // and applying any selected username, age, gender, media, language,
+    // timezone and genre filters
     let userQuery = supabase.from('profiles').select('*');
+    if (blockedIds.length) userQuery = userQuery.not('user_id', 'in', `(${blockedIds.join(',')})`);
     if (username) userQuery = userQuery.ilike('username', `%${username}%`);
     if (age) userQuery = userQuery.eq('age', age);
     if (gender) userQuery = userQuery.eq('gender', gender);
@@ -70,6 +85,7 @@ function UserSearch() {
     if (mediaType) postQuery = postQuery.eq('media_type', mediaType);
     if (language) postQuery = postQuery.eq('language', language);
     if (pickedGenres.length) postQuery = postQuery.in('genre', pickedGenres);
+    if (postKeyword) postQuery = postQuery.ilike('content', `%${postKeyword}%`);
 
     if (username) {
       const { data = [] } = await supabase.from('profiles').select('user_id').ilike('username', `%${username}%`);
@@ -86,6 +102,7 @@ function UserSearch() {
 
   const handleReset = () => {
     setUsername('');
+    setPostKeyword('');
     setAge('');
     setGender('');
     setGenres(['', '', '', '']);
@@ -107,6 +124,15 @@ function UserSearch() {
             value={username}
             placeholder="Search by username..."
             onChange={e => setUsername(e.target.value)}
+          />
+        </ProfileField>
+
+        <ProfileField label="Post :">
+          <input
+            type="text"
+            value={postKeyword}
+            placeholder="Search by post content..."
+            onChange={e => setPostKeyword(e.target.value)}
           />
         </ProfileField>
 

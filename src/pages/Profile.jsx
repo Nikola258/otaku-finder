@@ -18,6 +18,7 @@ export function Profile() {
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
 
   // Editable fields
   const [username, setUsername] = useState('');
@@ -28,6 +29,7 @@ export function Profile() {
   const [language, setLanguage] = useState('Japanese');
   const [timezone, setTimezone] = useState('UTC +2');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [bio, setBio] = useState('');
 
   async function fetchProfile() {
     const { data } = await supabase
@@ -47,6 +49,7 @@ export function Profile() {
       setLanguage(data.language ?? 'Japanese');
       setTimezone(data.timezone ?? 'UTC +2');
       setIsPrivate(data.is_private ?? false);
+      setBio(data.bio ?? '');
     }
   }
 
@@ -65,10 +68,28 @@ export function Profile() {
     if (!error) fetchPosts();
   }
 
+  async function fetchBlockedUsers() {
+    const { data: blockData } = await supabase
+      .from('blocks')
+      .select('blocked_id')
+      .eq('blocker_id', session.user.id);
+
+    if (!blockData?.length) { setBlockedUsers([]); return; }
+
+    const ids = blockData.map(b => b.blocked_id);
+    const { data: profiles } = await supabase.from('profiles').select('user_id, username, avatar_url').in('user_id', ids);
+    setBlockedUsers(profiles ?? []);
+  }
+
+  async function unblockUser(blockedId) {
+    await supabase.from('blocks').delete().eq('blocker_id', session.user.id).eq('blocked_id', blockedId);
+    fetchBlockedUsers();
+  }
+
   async function updateProfile() {
     await supabase
       .from('profiles')
-      .update({ username, age, gender, genres, media_type: mediaType, language, timezone, is_private: isPrivate })
+      .update({ username, age, gender, genres, media_type: mediaType, language, timezone, is_private: isPrivate, bio })
       .eq('user_id', session.user.id);
     fetchProfile();
   }
@@ -92,6 +113,7 @@ export function Profile() {
     if (!session) return;
     fetchProfile();
     fetchPosts();
+    fetchBlockedUsers();
   }, [session]);
 
   if (sessionLoading) return <p className="profile-loading">Loading...</p>;
@@ -123,6 +145,17 @@ export function Profile() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
               onBlur={updateProfile}
+            />
+          </ProfileField>
+
+          <ProfileField label="Bio :">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell something about yourself..."
+              rows={3}
+              onBlur={updateProfile}
+              style={{ background: 'transparent', border: 'none', color: '#fff', width: '100%', resize: 'vertical', outline: 'none', fontSize: '0.9rem' }}
             />
           </ProfileField>
 
@@ -207,6 +240,22 @@ export function Profile() {
         <button className="profile-logout" onClick={() => supabase.auth.signOut()}>
           Logout
         </button>
+
+        {/* Blocked users */}
+        {blockedUsers.length > 0 && (
+          <section className="profile-posts">
+            <h2 className="profile-posts__title">Geblokkeerde gebruikers</h2>
+            {blockedUsers.map(user => (
+              <div key={user.user_id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#1e1b1b', borderRadius: '8px', padding: '10px 16px', marginBottom: '8px' }}>
+                <div className="profile-avatar-box" style={{ width: '36px', height: '36px' }}>
+                  {user.avatar_url ? <img src={user.avatar_url} alt={user.username} className="profile-avatar-img" /> : <span className="profile-avatar-placeholder">?</span>}
+                </div>
+                <span style={{ color: '#fff', flex: 1 }}>{user.username}</span>
+                <button className="profile-logout" onClick={() => unblockUser(user.user_id)}>Deblokkeer</button>
+              </div>
+            ))}
+          </section>
+        )}
       </main>
   );
 }
@@ -217,6 +266,8 @@ export function PublicProfile() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [canSeePosts, setCanSeePosts] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [iBlockedThem, setIBlockedThem] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -224,22 +275,36 @@ export function PublicProfile() {
       if (!profileData) return;
       setProfile(profileData);
 
+      if (!session) return;
+      const myId = session.user.id;
+
+      // Check if either side has blocked the other
+      const { data: blockData } = await supabase
+        .from('blocks')
+        .select('id, blocker_id')
+        .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`)
+        .or(`blocker_id.eq.${id},blocked_id.eq.${id}`);
+
+      const blocked = (blockData ?? []).some(b =>
+        (b.blocker_id === myId) || (b.blocker_id === id)
+      );
+
+      const iBlocked = (blockData ?? []).some(b => b.blocker_id === myId);
+
+      setIsBlocked(blocked);
+      setIBlockedThem(iBlocked);
+      if (blocked) return;
+
       // Check if we can see posts
       if (profileData.is_private !== true) {
-        // Public account — everyone can see posts
         setCanSeePosts(true);
         const { data } = await supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false });
         setPosts(data ?? []);
-      } else if (session) {
-        // Private account — only if we follow them (accepted)
+      } else {
         const { data: follow } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', session.user.id)
-          .eq('following_id', id)
-          .eq('status', 'accepted')
+          .from('follows').select('id')
+          .eq('follower_id', myId).eq('following_id', id).eq('status', 'accepted')
           .single();
-
         if (follow) {
           setCanSeePosts(true);
           const { data } = await supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false });
@@ -250,11 +315,28 @@ export function PublicProfile() {
     load();
   }, [id, session]);
 
+  async function blockUser() {
+    await supabase.from('blocks').insert({ blocker_id: session.user.id, blocked_id: id });
+    setIsBlocked(true);
+    setIBlockedThem(true);
+    setPosts([]);
+    setCanSeePosts(false);
+  }
+
+  async function unblockUser() {
+    await supabase.from('blocks').delete().eq('blocker_id', session.user.id).eq('blocked_id', id);
+    setIsBlocked(false);
+    setIBlockedThem(false);
+  }
+
   if (!profile) return <p className="profile-loading">Loading profile...</p>;
+
+  if (isBlocked && !iBlockedThem) {
+    return <main className="profile-main"><p className="profile-loading">Dit profiel is niet beschikbaar.</p></main>;
+  }
 
   return (
     <main className="profile-main">
-      {/* Avatar */}
       <div className="profile-avatar-row">
         <div className="profile-avatar-box">
           {profile.avatar_url
@@ -263,34 +345,41 @@ export function PublicProfile() {
           }
         </div>
         <span className="profile-username">{profile.username}{profile.is_private ? ' 🔒' : ''}</span>
+        {session && session.user.id !== id && (
+          iBlockedThem
+            ? <button className="profile-save" style={{ marginLeft: '12px' }} onClick={unblockUser}>Unblock</button>
+            : <button className="profile-logout" style={{ marginLeft: '12px' }} onClick={blockUser}>Block</button>
+        )}
       </div>
 
-      {/* Read-only profile fields */}
-      <div className="profile-fields">
-        <ProfileField label="Age :"><span>{profile.age}</span></ProfileField>
-        <ProfileField label="Gender :"><span>{profile.gender}</span></ProfileField>
-        <ProfileField label="Favourite genres :" fullWidth>
-          {(profile.genres ?? []).filter(Boolean).map((g, i) => <span key={i}>{g}</span>)}
-        </ProfileField>
-        <ProfileField label="Favourite media :"><span>{profile.media_type}</span></ProfileField>
-        <ProfileField label="Favourite language :"><span>{profile.language}</span></ProfileField>
-        <ProfileField label="Time zone :"><span>{profile.timezone}</span></ProfileField>
-      </div>
+      {!isBlocked && (
+        <>
+          <div className="profile-fields">
+            {profile.bio && <ProfileField label="Bio :"><span>{profile.bio}</span></ProfileField>}
+            <ProfileField label="Age :"><span>{profile.age}</span></ProfileField>
+            <ProfileField label="Gender :"><span>{profile.gender}</span></ProfileField>            <ProfileField label="Favourite genres :" fullWidth>
+              {(profile.genres ?? []).filter(Boolean).map((g, i) => <span key={i}>{g}</span>)}
+            </ProfileField>
+            <ProfileField label="Favourite media :"><span>{profile.media_type}</span></ProfileField>
+            <ProfileField label="Favourite language :"><span>{profile.language}</span></ProfileField>
+            <ProfileField label="Time zone :"><span>{profile.timezone}</span></ProfileField>
+          </div>
 
-      {/* Posts */}
-      <section className="profile-posts">
-        <h2 className="profile-posts__title">Posts</h2>
-        {!canSeePosts
-          ? <p className="profile-posts__empty">Dit account is privé. Volg deze gebruiker om posts te zien.</p>
-          : posts.length === 0
-            ? <p className="profile-posts__empty">Geen posts.</p>
-            : posts.map(post => (
-              <PostCard key={post.id} content={post.content}
-                image={post.image_url} date={post.created_at}
-                postId={post.id} postUserId={post.user_id} />
-            ))
-        }
-      </section>
+          <section className="profile-posts">
+            <h2 className="profile-posts__title">Posts</h2>
+            {!canSeePosts
+              ? <p className="profile-posts__empty">Dit account is privé. Volg deze gebruiker om posts te zien.</p>
+              : posts.length === 0
+                ? <p className="profile-posts__empty">Geen posts.</p>
+                : posts.map(post => (
+                  <PostCard key={post.id} content={post.content}
+                    image={post.image_url} date={post.created_at}
+                    postId={post.id} postUserId={post.user_id} />
+                ))
+            }
+          </section>
+        </>
+      )}
     </main>
   );
 }

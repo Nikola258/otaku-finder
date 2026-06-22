@@ -34,11 +34,19 @@ function Home() {
     const { data: myFollows } = await supabase.from('follows').select('following_id').eq('follower_id', session?.user?.id).eq('status', 'accepted');
     const followingIds = (myFollows ?? []).map(f => f.following_id);
 
-    // Only show posts from: myself, public users, or private users I follow
+    // Get blocked user IDs (both directions)
+    const { data: blockData } = await supabase
+      .from('blocks')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${session?.user?.id},blocked_id.eq.${session?.user?.id}`);
+    const blockedIds = (blockData ?? []).map(b => b.blocker_id === session?.user?.id ? b.blocked_id : b.blocker_id);
+
+    // Only show posts from: myself, public users, or private users I follow — excluding blocked
     const visible = allPosts.filter(post =>
-      post.user_id === session?.user?.id ||
+      !blockedIds.includes(post.user_id) &&
+      (post.user_id === session?.user?.id ||
       !privateIds.includes(post.user_id) ||
-      followingIds.includes(post.user_id)
+      followingIds.includes(post.user_id))
     );
 
     setPosts(visible);
