@@ -225,7 +225,7 @@ export function PublicProfile() {
       setProfile(profileData);
 
       // Check if we can see posts
-      if (!profileData.is_private) {
+      if (profileData.is_private !== true) {
         // Public account — everyone can see posts
         setCanSeePosts(true);
         const { data } = await supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false });
