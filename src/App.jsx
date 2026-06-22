@@ -5,6 +5,8 @@ import Auth from './pages/Auth';
 import Home from './pages/Home';
 import Search from './pages/Search';
 import Friends from './pages/Friends';
+import Admin from './pages/Admin';
+import PostDetail from './pages/PostDetail';
 import { Profile, PublicProfile } from './pages/Profile';
 
 export default function App() {
@@ -40,6 +42,18 @@ export default function App() {
       <Route path="/friends" element={
         <PrivateRoute>
           <AppLayout><Friends /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/admin" element={
+        <PrivateRoute>
+          <AppLayout><Admin /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/posts/:id" element={
+        <PrivateRoute>
+          <AppLayout><PostDetail /></AppLayout>
         </PrivateRoute>
       } />
     </Routes>

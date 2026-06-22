@@ -58,3 +58,65 @@ body{
   background: #ff4444;
   color: white;
 }
+.post-card-reported {
+  color: #ff4444;
+  font-size: 0.8rem;
+}
+
+.report-modal {
+  background: #2a2626;
+  border: 1px solid #FF5E00;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.report-modal__title {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.report-modal__select {
+  background: #1e1b1b;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.report-modal__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-modal__submit {
+  background: #FF5E00;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.report-modal__submit:hover {
+  background: #e05200;
+}
+
+.report-modal__cancel {
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

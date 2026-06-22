@@ -113,6 +113,7 @@ function Home() {
           {posts.map((post) => (
             <PostCard key={post.id} content={post.content}
               image={post.image_url} date={post.created_at}
+              postId={post.id} postUserId={post.user_id}
               onDelete={post.user_id === session?.user?.id ? () => handleDelete(post.id) : undefined} />
           ))}
         </div>

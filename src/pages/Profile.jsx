@@ -196,6 +196,8 @@ export function Profile() {
                 content={post.content}
                 image={post.image_url}
                 date={post.created_at}
+                postId={post.id}
+                postUserId={post.user_id}
                 onDelete={() => handleDelete(post.id)}
               />
             ))}

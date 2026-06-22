@@ -1,0 +1,118 @@
+.admin-main {
+  padding: 28px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+}
+
+.admin-title {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.admin-empty {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.admin-card {
+  background: #1e1b1b;
+  border: 1px solid #2e2b2b;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-card__reason {
+  color: #FF5E00;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.admin-card__meta {
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.admin-card__date {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.admin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-btn--secondary {
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.admin-btn--secondary:hover {
+  border-color: #aaa;
+  color: #fff;
+}
+
+.admin-btn--danger {
+  background: transparent;
+  border: 1px solid #ff4444;
+  color: #ff4444;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.admin-btn--danger:hover {
+  background: #ff4444;
+  color: #fff;
+}
+
+.admin-btn--warn {
+  background: transparent;
+  border: 1px solid #f5a623;
+  color: #f5a623;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.admin-btn--warn:hover {
+  background: #f5a623;
+  color: #fff;
+}
+
+.admin-btn--ignore {
+  background: transparent;
+  border: 1px solid #555;
+  color: #888;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.admin-btn--ignore:hover {
+  color: #fff;
+  border-color: #aaa;
+}
+ 

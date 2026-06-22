@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '../supabase';
+import { useSession } from '../hooks/useSession';
 import '../css/Sidebar.css';
 
 function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
+  const { session } = useSession();
+
+  useEffect(() => {
+    if (!session) return;
+    supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', session.user.id)
+      .single()
+      .then(({ data }) => setIsAdmin(data?.is_admin ?? false));
+  }, [session]);
 
   const links = [
     { label: 'Home', to: '/' },
@@ -36,6 +50,11 @@ function Sidebar() {
               {link.label}
             </Link>
           ))}
+        {!collapsed && isAdmin && (
+          <Link to="/admin" className={`sidebar__link ${location.pathname === '/admin' ? 'sidebar__link--active' : ''}`}>
+            Admin
+          </Link>
+        )}
       </nav>
 
       <button
@@ -50,3 +69,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+ 
