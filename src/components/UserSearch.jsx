@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
+import { useSession } from '../hooks/useSession';
 import ProfileField from './ProfileField';
 import PostCard from './PostCard';
 import '../css/UserSearch.css';
@@ -15,6 +16,8 @@ const AGES = Array.from({ length: 83 }, (_, i) => i + 13);
 
 function UserSearch() {
   const navigate = useNavigate();
+  const { session } = useSession();
+  const myId = session?.user?.id;
 
   const [username, setUsername] = useState('');
   const [age, setAge] = useState('');
@@ -39,11 +42,8 @@ function UserSearch() {
   const handleSearch = async () => {
     const pickedGenres = genres.filter(Boolean);
 
-    let userQuery = supabase
-      .from('profiles')
-      .select('*')
-      .neq('is_private', true);
-
+    // Show ALL users including private ones
+    let userQuery = supabase.from('profiles').select('*');
     if (username) userQuery = userQuery.ilike('username', `%${username}%`);
     if (age) userQuery = userQuery.eq('age', age);
     if (gender) userQuery = userQuery.eq('gender', gender);
@@ -51,35 +51,34 @@ function UserSearch() {
     if (language) userQuery = userQuery.eq('language', language);
     if (timezone) userQuery = userQuery.eq('timezone', timezone);
     if (pickedGenres.length) userQuery = userQuery.contains('genres', pickedGenres);
-
     const { data: foundUsers = [] } = await userQuery;
 
-    let postQuery = supabase.from('posts').select('*');
+    // Get the list of private user IDs I follow (accepted)
+    const { data: myFollows = [] } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', myId)
+      .eq('status', 'accepted');
+    const followingIds = myFollows.map(follow => follow.following_id);
 
+    // Only show posts from public users OR private users I follow
+    const allowedUserIds = foundUsers
+      .filter(user => !user.is_private || followingIds.includes(user.user_id))
+      .map(user => user.user_id);
+
+    let postQuery = supabase.from('posts').select('*').in('user_id', allowedUserIds.length ? allowedUserIds : ['none']);
     if (mediaType) postQuery = postQuery.eq('media_type', mediaType);
     if (language) postQuery = postQuery.eq('language', language);
     if (pickedGenres.length) postQuery = postQuery.in('genre', pickedGenres);
 
     if (username) {
-      const { data = [] } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .ilike('username', `%${username}%`);
-
-      const ids = data.map(user => user.user_id);
-
-      if (!ids.length) {
-        setUsers(foundUsers);
-        setPosts([]);
-        setSearched(true);
-        return;
-      }
-
+      const { data = [] } = await supabase.from('profiles').select('user_id').ilike('username', `%${username}%`);
+      const ids = data.map(user => user.user_id).filter(id => allowedUserIds.includes(id));
+      if (!ids.length) { setUsers(foundUsers); setPosts([]); setSearched(true); return; }
       postQuery = postQuery.in('user_id', ids);
     }
 
     const { data: foundPosts = [] } = await postQuery;
-
     setUsers(foundUsers);
     setPosts(foundPosts);
     setSearched(true);
@@ -201,7 +200,7 @@ function UserSearch() {
                 </div>
 
                 <div className="user-search__info">
-                  <span className="user-search__name">{user.username}</span>
+                  <span className="user-search__name">{user.username}{user.is_private ? ' 🔒' : ''}</span>
                   <span className="user-search__meta">
                     {user.age} · {user.gender} · {user.media_type} · {user.language}
                   </span>
