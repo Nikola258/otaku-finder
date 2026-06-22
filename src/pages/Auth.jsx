@@ -4,7 +4,7 @@
 // De routing in App.jsx bepaalt welke modus wordt getoond.
 
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { useSession } from '../hooks/useSession';
 import './Auth.css';
@@ -17,10 +17,10 @@ export default function Auth({ mode = 'login' }) {
   const [message, setMessage] = useState(null);
   const navigate = useNavigate();
 
-  // Als de gebruiker al is ingelogd, stuur hem door naar de homepage
+  // Als de gebruiker al is ingelogd, stuur hem door naar de profilepage
   const { session, loading: sessionLoading } = useSession();
   if (sessionLoading) return null;
-  if (session) return <Navigate to="/" />;
+  if (session) return <Navigate to="/profile" />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,15 +32,15 @@ export default function Auth({ mode = 'login' }) {
       // Inloggen met e-mail en wachtwoord
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
-      else navigate('/');
+      else navigate('/profile');
     }
 
-    if (mode === 'register') {
-      // Nieuw account aanmaken
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) setError(error.message);
-      else setMessage('Account aangemaakt! Je kunt nu inloggen.');
-    }
+    // if (mode === 'register') {
+    //   // Nieuw account aanmaken
+    //   const { error } = await supabase.auth.signUp({ email, password });
+    //   if (error) setError(error.message);
+    //   else setMessage('Account aangemaakt! Je kunt nu inloggen.');
+    // }
 
     // Wachtwoord vergeten functionaliteit is voorlopig uitgezet, maar hier is hoe het zou werken:
     // if (mode === 'forgot') {
@@ -49,6 +49,20 @@ export default function Auth({ mode = 'login' }) {
     //   if (error) setError(error.message);
     //   else setMessage('Controleer je e-mail voor een resetlink.');
     // }
+
+    if (mode === "register"){
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setError(error.message);
+      } else {
+        const username= `user_${data.user.id.slice(0, 8)}`;
+        await supabase.from("profiles").insert({
+          user_id: data.user.id,
+          username:username,
+        });
+        navigate("/profile");
+      }
+    }
 
     setLoading(false);
   };

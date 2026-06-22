@@ -1,20 +1,61 @@
-import { Routes, Route } from 'react-router';
+import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRoute';
+import AppLayout from './components/AppLayout';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import Search from './pages/Search';
+import Friends from './pages/Friends';
+import Admin from './pages/Admin';
+import PostDetail from './pages/PostDetail';
+import { Profile, PublicProfile } from './pages/Profile';
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/login" element={<Auth mode="login" />} />
+      <Route path="/register" element={<Auth mode="register" />} />
+
       <Route path="/" element={
         <PrivateRoute>
-          <Home/>
+          <AppLayout><Home /></AppLayout>
         </PrivateRoute>
-      }/>
-      
-      <Route path="/login" element={<Auth mode="login" />} /> 
+      } />
 
-      <Route path="/register" element={<Auth mode="register" />} /> 
+      <Route path="/profile" element={
+        <PrivateRoute>
+          <AppLayout><Profile /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/profile/:id" element={
+        <PrivateRoute>
+          <AppLayout><PublicProfile /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/search" element={
+        <PrivateRoute>
+          <AppLayout><Search /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/friends" element={
+        <PrivateRoute>
+          <AppLayout><Friends /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/admin" element={
+        <PrivateRoute>
+          <AppLayout><Admin /></AppLayout>
+        </PrivateRoute>
+      } />
+
+      <Route path="/posts/:id" element={
+        <PrivateRoute>
+          <AppLayout><PostDetail /></AppLayout>
+        </PrivateRoute>
+      } />
     </Routes>
   );
 }

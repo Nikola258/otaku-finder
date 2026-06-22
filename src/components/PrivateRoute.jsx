@@ -3,7 +3,7 @@
 // Wikkel een route in met <PrivateRoute> om hem te beveiligen.
 // Als de gebruiker niet is ingelogd, wordt hij automatisch doorgestuurd naar /login.
 
-import { Navigate } from 'react-router';
+import { Navigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 
 export default function PrivateRoute({ children }) {

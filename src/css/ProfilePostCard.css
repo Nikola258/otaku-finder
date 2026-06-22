@@ -1,0 +1,29 @@
+.profile-post-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e1b1b;
+  border: 1px solid #FF5E00;
+  border-radius: 10px;
+  padding: 18px 20px;
+  color: #ffffff;
+}
+
+.profile-post-card__title {
+  font-size: 1rem;
+  color: #dddddd;
+}
+
+.profile-post-card__btn {
+  background: transparent;
+  border: none;
+  color: #aaaaaa;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.profile-post-card__btn:hover {
+  color: #FF5E00;
+}

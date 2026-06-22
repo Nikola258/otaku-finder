@@ -1,0 +1,87 @@
+.profile-field {
+  display: flex;
+  align-items: center;
+  background: #1e1b1b;
+  border-radius: 8px;
+  padding: 6px 14px;
+  gap: 12px;
+}
+
+.profile-field__label {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+.profile-field__value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #2a2626;
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-height: 28px;
+  min-width: 80px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.profile-field__value:focus-within {
+  border-color: #FF5E00;
+}
+
+/* Genres row: stretch and no wrap so all 4 dropdowns stay on one line */
+.profile-field__value--full {
+  flex: 1;
+  flex-wrap: nowrap;
+}
+
+/* Toggle row: no background box */
+.profile-field__value--plain {
+  background: transparent;
+  border-color: transparent;
+  padding-left: 0;
+}
+
+.profile-field__value--plain:focus-within {
+  border-color: transparent;
+}
+
+/* Select inside a profile field */
+.profile-field__value select {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 110px;
+  padding-right: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0px center;
+}
+
+.profile-field__value select option {
+  background: #1e1b1b;
+  color: #ffffff;
+}
+
+/* Text input inside a profile field */
+.profile-field__value input[type='text'] {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.9rem;
+  outline: none;
+  width: 180px;
+}
+
+.profile-field__value input[type='text']::placeholder {
+  color: #888;
+}
