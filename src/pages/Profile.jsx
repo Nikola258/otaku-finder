@@ -213,30 +213,84 @@ export function Profile() {
 
 export function PublicProfile() {
   const { id } = useParams();
+  const { session } = useSession();
   const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [canSeePosts, setCanSeePosts] = useState(false);
 
   useEffect(() => {
-    async function fetchProfile() {
-      const { data } = await supabase.from('profiles').select('*').eq('user_id', id).single();
-      if (data) setProfile(data);
+    async function load() {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('user_id', id).single();
+      if (!profileData) return;
+      setProfile(profileData);
+
+      // Check if we can see posts
+      if (profileData.is_private !== true) {
+        // Public account — everyone can see posts
+        setCanSeePosts(true);
+        const { data } = await supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false });
+        setPosts(data ?? []);
+      } else if (session) {
+        // Private account — only if we follow them (accepted)
+        const { data: follow } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', session.user.id)
+          .eq('following_id', id)
+          .eq('status', 'accepted')
+          .single();
+
+        if (follow) {
+          setCanSeePosts(true);
+          const { data } = await supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false });
+          setPosts(data ?? []);
+        }
+      }
     }
-    fetchProfile();
-  }, [id]);
+    load();
+  }, [id, session]);
 
   if (!profile) return <p className="profile-loading">Loading profile...</p>;
 
   return (
     <main className="profile-main">
+      {/* Avatar */}
       <div className="profile-avatar-row">
-          <div className="profile-avatar-box">
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt="Profile" className="profile-avatar-img" />
-              : <span className="profile-avatar-placeholder">IMG</span>
-            }
-          </div>
-          <span className="profile-username">{profile.username}</span>
+        <div className="profile-avatar-box">
+          {profile.avatar_url
+            ? <img src={profile.avatar_url} alt="Profile" className="profile-avatar-img" />
+            : <span className="profile-avatar-placeholder">IMG</span>
+          }
         </div>
-        <p style={{ color: '#aaa' }}>{profile.bio}</p>
+        <span className="profile-username">{profile.username}{profile.is_private ? ' 🔒' : ''}</span>
+      </div>
+
+      {/* Read-only profile fields */}
+      <div className="profile-fields">
+        <ProfileField label="Age :"><span>{profile.age}</span></ProfileField>
+        <ProfileField label="Gender :"><span>{profile.gender}</span></ProfileField>
+        <ProfileField label="Favourite genres :" fullWidth>
+          {(profile.genres ?? []).filter(Boolean).map((g, i) => <span key={i}>{g}</span>)}
+        </ProfileField>
+        <ProfileField label="Favourite media :"><span>{profile.media_type}</span></ProfileField>
+        <ProfileField label="Favourite language :"><span>{profile.language}</span></ProfileField>
+        <ProfileField label="Time zone :"><span>{profile.timezone}</span></ProfileField>
+      </div>
+
+      {/* Posts */}
+      <section className="profile-posts">
+        <h2 className="profile-posts__title">Posts</h2>
+        {!canSeePosts
+          ? <p className="profile-posts__empty">Dit account is privé. Volg deze gebruiker om posts te zien.</p>
+          : posts.length === 0
+            ? <p className="profile-posts__empty">Geen posts.</p>
+            : posts.map(post => (
+              <PostCard key={post.id} content={post.content}
+                image={post.image_url} date={post.created_at}
+                postId={post.id} postUserId={post.user_id} />
+            ))
+        }
+      </section>
     </main>
   );
 }

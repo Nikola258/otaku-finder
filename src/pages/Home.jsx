@@ -22,11 +22,29 @@ function Home() {
   const [posts, setPosts] = useState([]);
 
   const fetchPosts = async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    if (data) setPosts(data);
+    const { data: allPosts } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    if (!allPosts) return;
+
+    // Get privacy status of all post authors
+    const userIds = [...new Set(allPosts.map(p => p.user_id))];
+    const { data: profiles } = await supabase.from('profiles').select('user_id, is_private').in('user_id', userIds);
+    const privateIds = (profiles ?? []).filter(p => p.is_private === true).map(p => p.user_id);
+
+    // Get who I follow
+    const { data: myFollows } = await supabase.from('follows').select('following_id').eq('follower_id', session?.user?.id).eq('status', 'accepted');
+    const followingIds = (myFollows ?? []).map(f => f.following_id);
+
+    // Only show posts from: myself, public users, or private users I follow
+    const visible = allPosts.filter(post =>
+      post.user_id === session?.user?.id ||
+      !privateIds.includes(post.user_id) ||
+      followingIds.includes(post.user_id)
+    );
+
+    setPosts(visible);
   };
 
-  useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => { if (session) fetchPosts(); }, [session]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
